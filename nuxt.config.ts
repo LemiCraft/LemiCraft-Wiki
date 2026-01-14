@@ -52,7 +52,6 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    strictNuxtContentPaths: true,
     exclude: [
       '/admin/**',
       '/draft/**'

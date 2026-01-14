@@ -41,4 +41,4 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
           source: ".output/"
-          target: "${{ secrets.DEPLOY_PATH }}/.output/"
+          target: "${{ secrets.DEPLOY_PATH }}/"

@@ -32,7 +32,17 @@ jobs:
       - name: Build Nuxt
         run: pnpm build
 
-      # 6. Копируем .output на сервер
+      # 6. Очистка от старой версии
+      - name: Clean remote .output folder
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: rm -rf "${{ secrets.DEPLOY_PATH }}/.output/*"
+
+      # 7. Копируем .output на сервер
       - name: Deploy .output to server
         uses: appleboy/scp-action@v1
         with:

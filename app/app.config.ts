@@ -12,15 +12,16 @@ export default defineAppConfig({
     }
   },
   seo: {
-    siteName: 'LemiCraft Wiki'
+    siteName: 'LemiCraft Wiki',
+    description: 'База знаний Minecraft сервера LemiCraft'
   },
   header: {
-    title: 'LemiCraft Wiki',
+    title: 'LemiCraft',
     to: '/',
     logo: {
-      alt: '',
-      light: '',
-      dark: ''
+      light: '/logo.webp',
+      dark: '/logo.webp',
+      alt: 'LemiCraft Logo'
     },
     search: true,
     colorMode: true,
@@ -32,8 +33,8 @@ export default defineAppConfig({
         'aria-label': 'Главная страница'
       },
       {
-        icon: 'i-lucide-messages-square',
-        to: 'https://lemicraft.ru/discord',
+        icon: 'i-simple-icons-discord',
+        to: 'https://discord.gg/ybC6QM8WTM',
         target: '_blank',
         'aria-label': 'Discord сервер'
       }
@@ -50,16 +51,16 @@ export default defineAppConfig({
         'aria-label': 'Главная'
       },
       {
-        icon: 'i-lucide-messages-square',
-        to: 'https://lemicraft.ru/discord',
+        icon: 'i-lucide-mail',
+        to: 'mailto:lemicraftteam@yandex.ru',
         target: '_blank',
-        'aria-label': 'Discord'
+        'aria-label': 'Поддержка'
       },
       {
-        icon: 'i-lucide-book-open',
-        to: 'https://lemicraft.ru/rules',
+        icon: 'i-simple-icons-discord',
+        to: 'https://discord.gg/ybC6QM8WTM',
         target: '_blank',
-        'aria-label': 'Правила'
+        'aria-label': 'Discord'
       }
     ]
   },

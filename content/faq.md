@@ -1,8 +1,12 @@
 ---
 title: FAQ
-description: Часто задаваемые вопросы о сервере LemiCraft
+description: Часто задаваемые вопросы о проекте LemiCraft
 navigation:
   icon: i-lucide-help-circle
+seo:
+  title: FAQ — Часто задаваемые вопросы о LemiCraft
+  description: Ответы на популярные вопросы о Minecraft проекте LemiCraft. Подключение, моды, правила и техническая поддержка
+  keywords: faq, вопросы и ответы, lemicraft помощь, minecraft сервер
 ---
 
 # Часто задаваемые вопросы

@@ -23,12 +23,26 @@ const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
 
 const title = page.value.seo?.title || page.value.title
 const description = page.value.seo?.description || page.value.description
+const keywords = page.value.seo?.keywords || ''
+const ogImage = page.value.seo?.ogImage || '/og-image.png'
 
 useSeoMeta({
   title,
   ogTitle: title,
   description,
-  ogDescription: description
+  ogDescription: description,
+  keywords,
+  ogImage: `https://wiki.lemicraft.ru${ogImage}`,
+  twitterCard: 'summary_large_image'
+})
+
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: `https://wiki.lemicraft.ru${route.path}`
+    }
+  ]
 })
 
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
@@ -50,10 +64,33 @@ const links = computed(() => {
 
   return [...links, ...(toc?.bottom?.links || [])].filter(Boolean)
 })
+
+const breadcrumbs = computed(() => {
+  const paths = route.path.split('/').filter(Boolean)
+  return paths.map((path, index) => ({
+    name: path.charAt(0).toUpperCase() + path.slice(1),
+    url: `https://wiki.lemicraft.ru/${paths.slice(0, index + 1).join('/')}`
+  }))
+})
 </script>
 
 <template>
   <UPage v-if="page">
+    <SeoJsonLd
+      type="article"
+      :data="{
+        title: page.title,
+        description: page.description,
+        datePublished: page.datePublished || '2025-01-01',
+        dateModified: page.dateModified || new Date().toISOString()
+      }"
+    />
+    <SeoJsonLd
+      v-if="breadcrumbs.length"
+      type="breadcrumb"
+      :data="breadcrumbs"
+    />
+
     <UPageHeader
       :title="page.title"
       :description="page.description"
@@ -65,8 +102,6 @@ const links = computed(() => {
           :key="index"
           v-bind="link"
         />
-
-        <PageHeaderLinks />
       </template>
     </UPageHeader>
 

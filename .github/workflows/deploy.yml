@@ -33,13 +33,12 @@ jobs:
         run: pnpm build
 
       # 6. Копируем .output на сервер
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v0.1.8
+      - name: Deploy .output to server
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
-          script: |
-            mkdir -p ${{ secrets.DEPLOY_PATH }}
-            rsync -avz --delete .output/ ${{ secrets.DEPLOY_PATH }}/.output/
+          source: ".output/"
+          target: "${{ secrets.DEPLOY_PATH }}/.output/"

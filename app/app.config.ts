@@ -29,7 +29,6 @@ export default defineAppConfig({
       {
         icon: 'i-lucide-home',
         to: 'https://lemicraft.ru',
-        target: '_blank',
         'aria-label': 'Главная страница'
       },
       {

@@ -26,6 +26,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   app: {
+    trailingSlash: true,
     head: {
       htmlAttrs: {
         lang: 'ru'
@@ -46,7 +47,7 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'canonical', href: 'https://wiki.lemicraft.ru' }
+        { rel: 'canonical', href: 'https://wiki.lemicraft.ru/' }
       ]
     }
   },
@@ -75,7 +76,8 @@ export default defineNuxtConfig({
   },
 
   experimental: {
-    asyncContext: true
+    asyncContext: true,
+    payloadExtraction: false
   },
 
   compatibilityDate: '2024-07-11',

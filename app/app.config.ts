@@ -60,6 +60,12 @@ export default defineAppConfig({
         to: 'https://discord.gg/ybC6QM8WTM',
         target: '_blank',
         'aria-label': 'Discord'
+      },
+      {
+        icon: 'i-incide-gem',
+        to: 'https://pay.cloudtips.ru/p/88ec7166',
+        target: '_blank',
+        'aria-label': 'Донат'
       }
     ]
   },

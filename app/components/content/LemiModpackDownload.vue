@@ -11,7 +11,7 @@
       </svg>
       <div>
         <div class="download-title">Скачать сборку модов</div>
-        <div class="download-meta">{{ data.fileName }} · {{ fileSizeMb }} МБ · Minecraft {{ data.minecraft }}</div>
+        <div class="download-meta">{{ data.fileName }} · {{ fileSizeMb }} МБ</div>
       </div>
     </a>
 

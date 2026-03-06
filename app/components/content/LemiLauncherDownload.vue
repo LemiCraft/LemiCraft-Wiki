@@ -29,27 +29,16 @@
 </template>
 
 <script setup>
-  const downloadUrl = ref(null)
-  const fileName = ref(null)
-  const version = ref(null)
-  const fileSize = ref(null)
-  const error = ref(false)
-
-  const fileSizeMb = computed(() =>
-    fileSize.value ? (fileSize.value / 1024 / 1024).toFixed(1) : null
+  const { data, error } = await useAsyncData('lemi-launcher', () =>
+    $fetch('https://lemicraft.ru/api/launcher/version')
   )
 
-  onMounted(async () => {
-    try {
-      const data = await $fetch('/api/launcher/version')
-      downloadUrl.value = data.downloadUrl
-      fileName.value = data.fileName
-      version.value = data.version
-      fileSize.value = data.fileSize
-    } catch {
-      error.value = true
-    }
-  })
+  const downloadUrl = computed(() => data.value?.downloadUrl ?? null)
+  const fileName = computed(() => data.value?.fileName ?? null)
+  const version = computed(() => data.value?.version ?? null)
+  const fileSizeMb = computed(() =>
+    data.value?.fileSize ? (data.value.fileSize / 1024 / 1024).toFixed(1) : null
+  )
 </script>
 
 <style scoped>

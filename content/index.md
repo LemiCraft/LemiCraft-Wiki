@@ -39,7 +39,7 @@ seo:
   ---
   color: neutral
   size: xl
-  to: https://discord.gg/ybC6QM8WTM
+  to: https://discord.gg/hUjXjc9bQc
   variant: outline
   icon: i-simple-icons-discord
   ---

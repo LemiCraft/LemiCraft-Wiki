@@ -58,6 +58,7 @@ let suggestTimeout
 
 function searchSuggestions() {
   clearTimeout(suggestTimeout)
+  result.value = null
   const q = nick.value.trim()
   if (q.length < 2) { suggestions.value = []; return }
   suggestTimeout = setTimeout(async () => {

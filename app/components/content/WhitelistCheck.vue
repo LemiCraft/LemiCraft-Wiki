@@ -26,7 +26,7 @@
       </div>
 
       <Transition name="fade">
-        <div v-if="result" :key="result.nick" class="result" :class="result.found ? 'result-ok' : 'result-fail'">
+        <div v-if="result && !suggestions.length" :key="result.nick" class="result" :class="result.found ? 'result-ok' : 'result-fail'">
           <UIcon :name="result.found ? 'i-lucide-check-circle-2' : 'i-lucide-x-circle'" class="w-5 h-5 flex-shrink-0" />
           <div>
             <p class="result-title">

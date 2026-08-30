@@ -7,26 +7,13 @@
           placeholder="Ваш никнейм"
           size="lg"
           class="check-input"
-          @input="searchSuggestions"
           @keyup.enter="check"
         />
         <UButton size="lg" :loading="loading" @click="check">Проверить</UButton>
       </div>
 
-      <div v-if="suggestions.length" class="suggestions">
-        <button
-          v-for="p in suggestions"
-          :key="p.name"
-          type="button"
-          class="suggestion"
-          @click="selectSuggestion(p.name)"
-        >
-          {{ p.name }}
-        </button>
-      </div>
-
       <Transition name="fade">
-        <div v-if="result && !suggestions.length" :key="result.nick" class="result" :class="result.found ? 'result-ok' : 'result-fail'">
+        <div v-if="result" :key="result.nick" class="result" :class="result.found ? 'result-ok' : 'result-fail'">
           <UIcon :name="result.found ? 'i-lucide-check-circle-2' : 'i-lucide-x-circle'" class="w-5 h-5 flex-shrink-0" />
           <div>
             <p class="result-title">
@@ -53,38 +40,16 @@ const API_BASE = 'https://lemicraft.ru'
 const nick = ref('')
 const loading = ref(false)
 const result = ref(null)
-const suggestions = ref([])
-let suggestTimeout
-
-function searchSuggestions() {
-  clearTimeout(suggestTimeout)
-  result.value = null
-  const q = nick.value.trim()
-  if (q.length < 2) { suggestions.value = []; return }
-  suggestTimeout = setTimeout(async () => {
-    try {
-      const res = await $fetch(`${API_BASE}/api/players`, { query: { search: q } })
-      suggestions.value = res.players.slice(0, 6)
-    } catch {}
-  }, 300)
-}
-
-function selectSuggestion(name) {
-  nick.value = name
-  suggestions.value = []
-  check()
-}
 
 async function check() {
   const q = nick.value.trim()
   if (!q) return
-  clearTimeout(suggestTimeout)
-  suggestions.value = []
   loading.value = true
+  result.value = null
   try {
     const res = await $fetch(`${API_BASE}/api/players`, { query: { search: q } })
     const match = res.players.find(p => p.name?.toLowerCase() === q.toLowerCase())
-    result.value = { nick: q, found: !!match, banned: !!match?.banned }
+    result.value = { nick: match ? match.name : q, found: !!match, banned: !!match?.banned }
   } catch {
     result.value = { nick: q, found: false, banned: false }
   } finally {
@@ -101,7 +66,6 @@ async function check() {
   border: 1px solid rgb(var(--color-gray-200));
   border-radius: 12px;
   padding: 1.5rem;
-  position: relative;
 }
 .dark .check-card {
   background: rgb(var(--color-gray-900));
@@ -110,33 +74,6 @@ async function check() {
 
 .check-row { display: flex; gap: 0.5rem; }
 .check-input { flex: 1; }
-
-.suggestions {
-  position: absolute;
-  z-index: 10;
-  left: 1.5rem;
-  right: 1.5rem;
-  margin-top: 0.25rem;
-  background: rgb(var(--color-gray-50));
-  border: 1px solid rgb(var(--color-gray-200));
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-.dark .suggestions {
-  background: rgb(var(--color-gray-900));
-  border-color: rgb(var(--color-gray-800));
-}
-.suggestion {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-.suggestion:hover { background: rgb(var(--color-gray-100)); }
-.dark .suggestion:hover { background: rgb(var(--color-gray-800)); }
 
 .result {
   margin-top: 1rem;

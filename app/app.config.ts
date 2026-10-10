@@ -33,7 +33,7 @@ export default defineAppConfig({
       },
       {
         icon: 'i-simple-icons-discord',
-        to: 'https://discord.gg/ybC6QM8WTM',
+        to: 'https://discord.gg/hUjXjc9bQc',
         target: '_blank',
         'aria-label': 'Discord сервер'
       }
@@ -57,7 +57,7 @@ export default defineAppConfig({
       },
       {
         icon: 'i-simple-icons-discord',
-        to: 'https://discord.gg/ybC6QM8WTM',
+        to: 'https://discord.gg/hUjXjc9bQc',
         target: '_blank',
         'aria-label': 'Discord'
       },

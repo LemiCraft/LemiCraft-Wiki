@@ -17,13 +17,24 @@
 
     <div v-else-if="error" class="download-error">
       Не удалось загрузить информацию.
-      <a href="https://github.com/KOTOKOPOLb/LemiCraft-Launcher/releases/latest" target="_blank" rel="noopener noreferrer">
+      <a href="https://github.com/LemiCraft/LemiCraft-Launcher/releases/latest" target="_blank" rel="noopener noreferrer">
         Скачать с GitHub ↗
       </a>
     </div>
 
     <div v-else class="download-loading">
       Загрузка...
+    </div>
+
+    <div v-if="otherDownloads.length" class="other-downloads">
+      <span class="other-title">Другие платформы:</span>
+      <a
+        v-for="d in otherDownloads"
+        :key="d.url"
+        :href="d.url"
+        class="other-link"
+        download
+      >{{ d.label }}</a>
     </div>
   </div>
 </template>
@@ -36,6 +47,15 @@
   const downloadUrl = computed(() => data.value?.downloadUrl ?? null)
   const fileName = computed(() => data.value?.fileName ?? null)
   const version = computed(() => data.value?.version ?? null)
+  // Linux и macOS приходят в platforms; для macOS и Linux собираем ссылки на файлы
+  const otherDownloads = computed(() => {
+    const p = data.value?.platforms ?? {}
+    const list = []
+    for (const a of p.linux?.assets ?? []) list.push({ url: a.url, label: `Linux · ${a.label}` })
+    for (const a of p.macos?.assets ?? []) list.push({ url: a.url, label: 'macOS' })
+    return list
+  })
+
   const fileSizeMb = computed(() =>
     data.value?.fileSize ? (data.value.fileSize / 1024 / 1024).toFixed(1) : null
   )
@@ -79,6 +99,20 @@
     opacity: 0.8;
     font-weight: 400;
     margin-top: 0.125rem;
+  }
+
+  .other-downloads {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .other-link {
+    color: var(--accent-primary, #AB141C);
+    text-decoration: underline;
   }
 
   .download-error {

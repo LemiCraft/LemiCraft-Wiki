@@ -24,7 +24,6 @@ const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
 const title = page.value.seo?.title || page.value.title
 const description = page.value.seo?.description || page.value.description
 const keywords = page.value.seo?.keywords || ''
-const ogImage = page.value.seo?.ogImage || '/og-image.png'
 
 useSeoMeta({
   title,
@@ -32,7 +31,6 @@ useSeoMeta({
   description,
   ogDescription: description,
   keywords,
-  ogImage: `https://wiki.lemicraft.ru${ogImage}`,
   twitterCard: 'summary_large_image'
 })
 
@@ -48,6 +46,8 @@ useHead({
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
 
 defineOgImage('Docs', {
+  title,
+  description,
   headline: headline.value
 })
 

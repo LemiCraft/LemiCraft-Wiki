@@ -14,6 +14,8 @@ useSeoMeta({
   description,
   ogDescription: description
 })
+
+defineOgImage('Docs', { title: 'База знаний LemiCraft', description })
 </script>
 
 <template>

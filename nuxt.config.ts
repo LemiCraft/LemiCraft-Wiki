@@ -1,4 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { readFileSync } from 'node:fs'
+
+let pageDates: Record<string, string> = {}
+try { pageDates = JSON.parse(readFileSync('./app/data/page-dates.json', 'utf8')) } catch {}
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -60,7 +65,11 @@ export default defineNuxtConfig({
     exclude: [
       '/admin/**',
       '/draft/**'
-    ]
+    ],
+    urls: () => Object.entries(pageDates).map(([stem, lastmod]) => ({
+      loc: `https://wiki.lemicraft.ru${stem === 'index' ? '/' : '/' + stem.split('/').map(p => p.replace(/^\d+\./, '').toLowerCase()).join('/')}`,
+      lastmod
+    }))
   },
 
   robots: {

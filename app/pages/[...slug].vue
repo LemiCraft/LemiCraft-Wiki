@@ -52,8 +52,8 @@ const updated = computed(() => {
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
 
 defineOgImage('Docs', {
-  heading: title,
-  summary: description,
+  title,
+  description,
   headline: headline.value
 })
 

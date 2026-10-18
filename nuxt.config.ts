@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/ui',
     '@nuxt/content',
+    '@nuxt/fonts',
     'nuxt-og-image',
     'nuxt-llms',
     '@nuxtjs/sitemap'

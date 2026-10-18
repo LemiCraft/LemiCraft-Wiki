@@ -8,6 +8,7 @@ const { header } = useAppConfig()
 
 <template>
   <UHeader
+    mode="slideover"
     :ui="{ center: 'flex-1' }"
     :to="header?.to || '/'"
   >

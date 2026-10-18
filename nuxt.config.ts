@@ -27,6 +27,7 @@ export default defineNuxtConfig({
 
   app: {
     trailingSlash: true,
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       htmlAttrs: {
         lang: 'ru'

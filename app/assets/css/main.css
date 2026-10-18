@@ -7,8 +7,6 @@
   --container-8xl: 90rem;
   --font-sans: 'Public Sans', sans-serif;
 
-  /* фирменный красный сайта lemicraft.ru: в тёмной теме основной цвет - оттенок 400 (светлый, читается на тёмном),
-     в светлой - 500 (насыщенный). Значения те же, что у палитры lemi на сайте */
   --color-lemi-50:  #fff1f1;
   --color-lemi-100: #ffdfdf;
   --color-lemi-200: #ffc4c4;
@@ -38,7 +36,6 @@
   --ui-container: var(--container-8xl);
 }
 
-/* Тёмная тема в цветах сайта lemicraft.ru: тёплый почти-чёрный фон вместо холодного серого, карточки и линии оттуда же */
 .dark {
   --ui-bg: #141213;
   --ui-bg-muted: #1f1b1d;
@@ -47,4 +44,19 @@
   --ui-border: #2a2628;
   --ui-border-muted: #2a2628;
   --ui-border-accented: #3a3336;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+.page-enter-active { transition: opacity .22s ease, transform .22s cubic-bezier(.23, 1, .32, 1); }
+.page-leave-active { transition: opacity .14s ease; }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .page-enter-active, .page-leave-active { transition: none; }
 }

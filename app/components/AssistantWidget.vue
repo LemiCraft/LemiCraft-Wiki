@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
   <ClientOnly>
     <div
       ref="bar"
-      class="fixed z-40 inset-x-3 bottom-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[30rem] flex flex-col gap-2"
+      class="fixed z-40 bottom-3 left-1/2 -translate-x-1/2 w-[min(24rem,calc(100vw-1.5rem))] flex flex-col gap-2"
     >
       <Transition name="ai">
         <section
@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
       </Transition>
 
       <form
-        class="flex items-center gap-2 rounded-2xl border border-default bg-default/95 backdrop-blur shadow-lg pl-3 pr-2 py-2 focus-within:border-primary transition-colors"
+        class="flex items-center gap-2 rounded-xl border border-default bg-default/95 backdrop-blur shadow-lg pl-3 pr-1.5 py-1.5 focus-within:border-primary transition-colors"
         @submit.prevent="ask(input)"
       >
         <UIcon
@@ -211,10 +211,10 @@ onBeforeUnmount(() => {
           v-model="input"
           type="text"
           maxlength="1000"
-          placeholder="Спросить ИИ-помощника..."
+          placeholder="Спросить ИИ..."
           aria-label="Вопрос"
           autocomplete="off"
-          class="flex-1 min-w-0 bg-transparent text-base outline-none placeholder:text-muted"
+          class="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted"
           @focus="open = true"
         >
         <span class="hidden sm:flex items-center gap-1 text-xs text-muted shrink-0">

@@ -21,7 +21,8 @@ export default defineNuxtConfig({
   },
 
   fonts: {
-    families: [{ name: 'Onest', provider: 'google', weights: [400, 700], subsets: ['cyrillic', 'latin'], global: true }]
+    // шрифт лежит в public: при сборке шрифты с Google в картинки превью не попадали, и кириллица рисовалась квадратами
+    families: [{ name: 'Onest', src: '/fonts/Onest.ttf', weight: '100 900', global: true }]
   },
 
   site: {

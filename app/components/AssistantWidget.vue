@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface Msg { role: 'user' | 'assistant', content: string, sources?: { title: string, url: string }[], error?: boolean }
+interface Msg { id: number, role: 'user' | 'assistant', content: string, sources?: { title: string, url: string }[], error?: boolean, typing?: boolean, shown?: number }
 
 const API = 'https://lemicraft.ru/api/assistant/chat'
 const route = useRoute()
@@ -9,17 +9,21 @@ const bar = ref<HTMLElement | null>(null)
 const input = ref('')
 const loading = ref(false)
 const messages = ref<Msg[]>([])
-const listEl = ref<HTMLElement | null>(null)
+let nextId = 1
+const list = ref<{ $el: HTMLElement } | null>(null)
+const listEl = computed(() => list.value?.$el ?? null)
 const inputEl = ref<HTMLInputElement | null>(null)
 
 const examples = ['Как установить лаунчер?', 'Почему не заходит на сервер?', 'Как поставить моды?']
 
 onMounted(() => {
-  try { messages.value = JSON.parse(sessionStorage.getItem('wiki-ai') || '[]') } catch {}
+  try { messages.value = JSON.parse(sessionStorage.getItem('wiki-ai') || '[]').map((m: Msg) => ({ role: m.role, content: m.content, sources: m.sources, error: m.error, id: nextId++ })) } catch {}
 })
 watch(messages, (v) => {
-  try { sessionStorage.setItem('wiki-ai', JSON.stringify(v.slice(-12))) } catch {}
+  try { sessionStorage.setItem('wiki-ai', JSON.stringify(v.slice(-12).map(({ id, typing, shown, ...rest }) => rest))) } catch {}
 }, { deep: true })
+
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function esc(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -32,16 +36,55 @@ function render(text: string) {
     .replace(/\n/g, '<br>')
 }
 
-async function scrollDown() {
+function atBottom() {
+  const el = listEl.value
+  return !el || el.scrollHeight - el.scrollTop - el.clientHeight < 60
+}
+async function scrollDown(smooth = true) {
   await nextTick()
-  listEl.value?.scrollTo({ top: listEl.value.scrollHeight, behavior: 'smooth' })
+  listEl.value?.scrollTo({ top: listEl.value.scrollHeight, behavior: smooth && !reduced() ? 'smooth' : 'auto' })
+}
+
+// ответ печатается, а список следует за текстом, пока читатель внизу
+async function typeOut(msg: Msg) {
+  const full = msg.content
+  if (reduced()) {
+    msg.typing = false
+    return
+  }
+  const speed = Math.max(900, Math.min(2600, full.length * 3))
+  const start = performance.now()
+  await new Promise<void>((resolve) => {
+    const frame = (now: number) => {
+      const follow = atBottom()
+      let n = Math.min(full.length, Math.floor((now - start) / 1000 * speed))
+      while (n < full.length && n > 0 && !/\s/.test(full[n - 1]!)) n++
+      msg.shown = n
+      if (follow) scrollDown(false)
+      if (n >= full.length) return resolve()
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  })
+  msg.typing = false
+  scrollDown()
+}
+
+// недописанная разметка (**, `, [ссылка](...)) прячется, чтобы не мигали символы
+function visibleText(m: Msg) {
+  if (!m.typing || m.shown === undefined) return m.content
+  let s = m.content.slice(0, m.shown)
+  s = s.replace(/\[[^\]\n]*$/, '').replace(/\]\([^)\n]*$/, '').replace(/https?:\/\/\S*$/, '')
+  if ((s.match(/\*\*/g) || []).length % 2) s = s.replace(/\*\*[^*]*$/, '')
+  if ((s.match(/`/g) || []).length % 2) s = s.replace(/`[^`]*$/, '')
+  return s
 }
 
 async function ask(q: string) {
   q = q.trim()
   if (!q || loading.value) return
   open.value = true
-  messages.value.push({ role: 'user', content: q })
+  messages.value.push({ id: nextId++, role: 'user', content: q })
   input.value = ''
   loading.value = true
   scrollDown()
@@ -50,13 +93,18 @@ async function ask(q: string) {
   if (title && route.path !== '/') history[history.length - 1]!.content = `${q} (страница вики: ${title})`
   try {
     const res = await $fetch<any>(API, { method: 'POST', body: { messages: history } })
-    messages.value.push({ role: 'assistant', content: res.answer || 'Не удалось получить ответ', sources: res.sources })
+    loading.value = false
+    const msg: Msg = reactive({ id: nextId++, role: 'assistant', content: res.answer || 'Не удалось получить ответ', sources: res.sources, typing: true, shown: 0 })
+    messages.value.push(msg)
+    await typeOut(msg)
   } catch (e: any) {
     const status = e?.statusCode || e?.status
-    const text = status === 429 ? 'Слишком часто. Подожди минуту и спроси снова'
-      : status === 403 ? 'Помощник сейчас недоступен. Спроси в Discord'
+    const text = status === 429
+      ? 'Слишком часто. Подожди минуту и спроси снова'
+      : status === 403
+        ? 'Помощник сейчас недоступен. Спроси в Discord'
         : 'Не получилось ответить. Попробуй ещё раз'
-    messages.value.push({ role: 'assistant', content: text, error: true })
+    messages.value.push({ id: nextId++, role: 'assistant', content: text, error: true })
   } finally {
     loading.value = false
     scrollDown()
@@ -134,15 +182,17 @@ onBeforeUnmount(() => {
             />
           </header>
 
-          <div
-            ref="listEl"
-            class="overflow-y-auto px-4 py-3 space-y-3"
+          <TransitionGroup
+            ref="list"
+            name="ai-msg"
+            tag="div"
+            class="overflow-y-auto px-4 py-3 flex flex-col gap-3"
             role="log"
             aria-live="polite"
           >
             <div
-              v-for="(m, i) in messages"
-              :key="i"
+              v-for="m in messages"
+              :key="m.id"
               :class="m.role === 'user' ? 'flex justify-end' : ''"
             >
               <div
@@ -150,9 +200,9 @@ onBeforeUnmount(() => {
                 :class="m.role === 'user' ? 'bg-primary text-inverted' : (m.error ? 'bg-error/10 text-error' : 'bg-elevated text-default')"
               >
                 <!-- eslint-disable-next-line vue/no-v-html -->
-                <div v-html="render(m.content)" />
+                <div v-html="render(visibleText(m))" />
                 <div
-                  v-if="m.sources?.length"
+                  v-if="m.sources?.length && !m.typing"
                   class="flex flex-wrap gap-1.5 pt-2"
                 >
                   <a
@@ -167,15 +217,16 @@ onBeforeUnmount(() => {
 
             <div
               v-if="loading"
-              class="flex items-center gap-2 text-sm text-muted"
+              key="thinking"
+              class="flex"
+              role="status"
+              aria-label="Помощник думает"
             >
-              <UIcon
-                name="i-lucide-loader-circle"
-                class="size-4 animate-spin"
-              />
-              Думаю...
+              <div class="ai-think rounded-2xl bg-elevated px-4 py-3.5">
+                <i /><i /><i />
+              </div>
             </div>
-          </div>
+          </TransitionGroup>
         </section>
       </Transition>
 
@@ -239,7 +290,20 @@ onBeforeUnmount(() => {
 .ai-enter-from { opacity: 0; transform: translateY(8px); }
 .ai-leave-to { opacity: 0; }
 
+.ai-msg-enter-active { transition: opacity .3s ease, transform .38s cubic-bezier(.23, 1, .32, 1); }
+.ai-msg-enter-from { opacity: 0; transform: translateY(12px); }
+.ai-msg-leave-active { transition: opacity .15s ease; position: absolute; }
+.ai-msg-leave-to { opacity: 0; }
+.ai-msg-move { transition: transform .3s ease; }
+
+.ai-think { display: inline-flex; gap: 5px; }
+.ai-think i { width: 6px; height: 6px; border-radius: 50%; background: var(--ui-text-muted); animation: ai-dot 1.2s ease-in-out infinite; }
+.ai-think i:nth-child(2) { animation-delay: .15s; }
+.ai-think i:nth-child(3) { animation-delay: .3s; }
+@keyframes ai-dot { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .ai-enter-active, .ai-leave-active { transition: none; }
+  .ai-enter-active, .ai-leave-active, .ai-msg-enter-active, .ai-msg-leave-active, .ai-msg-move { transition: none; }
+  .ai-think i { animation: none; opacity: .7; }
 }
 </style>

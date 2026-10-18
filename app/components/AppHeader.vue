@@ -4,6 +4,29 @@ import type { ContentNavigationItem } from '@nuxt/content'
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 
 const { header } = useAppConfig()
+
+const menuOpen = ref(false)
+const route = useRoute()
+watch(() => route.fullPath, () => {
+  menuOpen.value = false
+})
+
+function onKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') menuOpen.value = false
+}
+let wide: MediaQueryList | undefined
+function onWide() {
+  if (wide?.matches) menuOpen.value = false
+}
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  wide = window.matchMedia('(min-width: 1024px)')
+  wide.addEventListener('change', onWide)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  wide?.removeEventListener('change', onWide)
+})
 </script>
 
 <template>
@@ -31,7 +54,10 @@ const { header } = useAppConfig()
           class="logo-image"
         />
 
-        <span v-if="header?.title" class="logo-title">
+        <span
+          v-if="header?.title"
+          class="logo-title"
+        >
           {{ header.title }}
         </span>
       </div>
@@ -54,55 +80,103 @@ const { header } = useAppConfig()
       </template>
     </template>
 
-    <template #toggle="{ open, toggle }">
+    <template #toggle>
       <UButton
         color="neutral"
         variant="ghost"
-        :aria-label="open ? 'Закрыть меню' : 'Открыть меню'"
-        class="icon-press"
-        @click="toggle"
+        :aria-label="menuOpen ? 'Закрыть меню' : 'Открыть меню'"
+        :aria-expanded="menuOpen"
+        class="icon-press lg:hidden"
+        @click="menuOpen = !menuOpen"
       >
         <Transition
           name="icon-swap"
           mode="out-in"
         >
           <UIcon
-            :key="open ? 'x' : 'menu'"
-            :name="open ? 'i-lucide-x' : 'i-lucide-menu'"
+            :key="menuOpen ? 'x' : 'menu'"
+            :name="menuOpen ? 'i-lucide-x' : 'i-lucide-menu'"
             class="size-5"
           />
         </Transition>
       </UButton>
     </template>
 
-    <template #body>
-      <UContentNavigation
-        highlight
-        :navigation="navigation"
-      />
+    <template #bottom>
+      <div class="lg:hidden">
+        <Transition name="menu-fade">
+          <div
+            v-if="menuOpen"
+            class="menu-scrim"
+            @click="menuOpen = false"
+          />
+        </Transition>
+        <Transition name="menu-drop">
+          <nav
+            v-if="menuOpen"
+            class="menu-panel"
+            aria-label="Разделы вики"
+          >
+            <UContentNavigation
+              highlight
+              :navigation="navigation"
+            />
+          </nav>
+        </Transition>
+      </div>
     </template>
   </UHeader>
 </template>
 
 <style scoped>
+  .menu-panel {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    max-height: calc(100dvh - var(--ui-header-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    background: var(--ui-bg);
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .menu-scrim {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 100dvh;
+    background: rgb(0 0 0 / 0.45);
+  }
+
+  .menu-drop-enter-active { transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.23, 1, 0.32, 1); }
+  .menu-drop-leave-active { transition: opacity 0.14s ease, transform 0.14s ease; }
+  .menu-drop-enter-from, .menu-drop-leave-to { opacity: 0; transform: translateY(-8px); }
+  .menu-fade-enter-active, .menu-fade-leave-active { transition: opacity 0.2s ease; }
+  .menu-fade-enter-from, .menu-fade-leave-to { opacity: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-drop-enter-active, .menu-drop-leave-active, .menu-fade-enter-active, .menu-fade-leave-active { transition: none; }
+  }
+
   .header-branding {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     transition: opacity 0.2s;
   }
-  
+
   .header-branding:hover {
     opacity: 0.8;
   }
-  
+
   .header-branding :deep(img) {
     width: 2.5rem !important;
     height: 2.5rem !important;
     border-radius: 0.5rem !important;
     flex-shrink: 0;
   }
-  
+
   .logo-title {
     font-size: 1.125rem;
     font-weight: 700;

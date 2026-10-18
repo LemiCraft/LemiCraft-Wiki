@@ -12,11 +12,7 @@ export default defineNuxtConfig({
   ],
 
   llms: {
-    domain: 'https://wiki.lemicraft.ru',
-    full: {
-      title: 'LemiCraft Wiki',
-      description: 'Инструкции, гайды и ответы на вопросы по Minecraft-серверу LemiCraft'
-    }
+    domain: 'https://wiki.lemicraft.ru'
   },
 
   site: {

@@ -43,7 +43,7 @@ const { header } = useAppConfig()
         class="lg:hidden"
       />
 
-      <UColorModeButton v-if="header?.colorMode" />
+      <ThemeButton v-if="header?.colorMode" />
 
       <template v-if="header?.links">
         <UButton
@@ -52,6 +52,27 @@ const { header } = useAppConfig()
           v-bind="{ color: 'neutral', variant: 'ghost', ...link }"
         />
       </template>
+    </template>
+
+    <template #toggle="{ open, toggle }">
+      <UButton
+        color="neutral"
+        variant="ghost"
+        :aria-label="open ? 'Закрыть меню' : 'Открыть меню'"
+        class="icon-press"
+        @click="toggle"
+      >
+        <Transition
+          name="icon-swap"
+          mode="out-in"
+        >
+          <UIcon
+            :key="open ? 'x' : 'menu'"
+            :name="open ? 'i-lucide-x' : 'i-lucide-menu'"
+            class="size-5"
+          />
+        </Transition>
+      </UButton>
     </template>
 
     <template #body>

@@ -5,11 +5,12 @@ const API = 'https://lemicraft.ru/api/assistant/chat'
 const route = useRoute()
 
 const open = ref(false)
+const bar = ref<HTMLElement | null>(null)
 const input = ref('')
 const loading = ref(false)
 const messages = ref<Msg[]>([])
 const listEl = ref<HTMLElement | null>(null)
-const inputEl = ref<HTMLTextAreaElement | null>(null)
+const inputEl = ref<HTMLInputElement | null>(null)
 
 const examples = ['Как установить лаунчер?', 'Почему не заходит на сервер?', 'Как поставить моды?']
 
@@ -39,6 +40,7 @@ async function scrollDown() {
 async function ask(q: string) {
   q = q.trim()
   if (!q || loading.value) return
+  open.value = true
   messages.value.push({ role: 'user', content: q })
   input.value = ''
   loading.value = true
@@ -61,165 +63,180 @@ async function ask(q: string) {
   }
 }
 
-function toggle() {
-  open.value = !open.value
-  if (open.value) nextTick(() => inputEl.value?.focus())
+function focusInput() {
+  inputEl.value?.focus()
+}
+function close() {
+  open.value = false
+  inputEl.value?.blur()
 }
 function clear() {
   messages.value = []
 }
+
+function onKey(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+    e.preventDefault()
+    focusInput()
+  } else if (e.key === 'Escape' && open.value) {
+    close()
+  }
+}
+function onDocClick(e: MouseEvent) {
+  if (open.value && bar.value && !bar.value.contains(e.target as Node)) open.value = false
+}
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  document.addEventListener('click', onDocClick)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  document.removeEventListener('click', onDocClick)
+})
 </script>
 
 <template>
   <ClientOnly>
-    <div class="fixed bottom-4 right-4 z-40">
-      <UButton
-        v-if="!open"
-        icon="i-lucide-bot"
-        size="xl"
-        class="rounded-full shadow-lg"
-        aria-label="Спросить ИИ-помощника"
-        @click="toggle"
-      />
-    </div>
-
-    <Transition name="ai">
-      <section
-        v-if="open"
-        class="fixed z-50 inset-x-3 bottom-3 h-[75dvh] sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[24rem] sm:h-[34rem] flex flex-col rounded-2xl border border-default bg-default shadow-2xl overflow-hidden"
-        role="dialog"
-        aria-label="ИИ-помощник LemiCraft"
-      >
-        <header class="flex items-center gap-3 px-4 py-3 border-b border-default">
-          <UIcon
-            name="i-lucide-bot"
-            class="size-5 text-primary"
-          />
-          <div class="min-w-0 flex-1">
-            <p class="font-semibold text-sm text-highlighted">
+    <div
+      ref="bar"
+      class="fixed z-40 inset-x-3 bottom-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[30rem] flex flex-col gap-2"
+    >
+      <Transition name="ai">
+        <section
+          v-if="open && (messages.length || loading)"
+          class="flex flex-col max-h-[60dvh] rounded-2xl border border-default bg-default shadow-2xl overflow-hidden"
+          role="dialog"
+          aria-label="ИИ-помощник LemiCraft"
+        >
+          <header class="flex items-center gap-2 pl-4 pr-2 py-2 border-b border-default">
+            <UIcon
+              name="i-lucide-bot"
+              class="size-4 text-primary"
+            />
+            <p class="flex-1 text-sm font-semibold text-highlighted">
               Помощник LemiCraft
             </p>
-            <p class="text-xs text-muted">
-              Отвечает по этой вики
-            </p>
-          </div>
-          <UButton
-            v-if="messages.length"
-            icon="i-lucide-rotate-ccw"
-            color="neutral"
-            variant="ghost"
-            aria-label="Новый чат"
-            @click="clear"
-          />
-          <UButton
-            icon="i-lucide-x"
-            color="neutral"
-            variant="ghost"
-            aria-label="Закрыть"
-            @click="toggle"
-          />
-        </header>
-
-        <div
-          ref="listEl"
-          class="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-          role="log"
-          aria-live="polite"
-        >
-          <div
-            v-if="!messages.length"
-            class="h-full flex flex-col items-center justify-center text-center gap-3"
-          >
-            <p class="font-semibold text-highlighted">
-              Спроси про сервер, лаунчер или моды
-            </p>
-            <p class="text-sm text-muted">
-              С оплатой и банами лучше сразу в тикет на сайте
-            </p>
-            <div class="flex flex-col gap-2 w-full pt-2">
-              <UButton
-                v-for="e in examples"
-                :key="e"
-                color="neutral"
-                variant="outline"
-                block
-                @click="ask(e)"
-              >
-                {{ e }}
-              </UButton>
-            </div>
-          </div>
+            <UButton
+              icon="i-lucide-rotate-ccw"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              aria-label="Новый чат"
+              @click="clear"
+            />
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              aria-label="Закрыть"
+              @click="close"
+            />
+          </header>
 
           <div
-            v-for="(m, i) in messages"
-            :key="i"
-            :class="m.role === 'user' ? 'flex justify-end' : ''"
+            ref="listEl"
+            class="overflow-y-auto px-4 py-3 space-y-3"
+            role="log"
+            aria-live="polite"
           >
             <div
-              class="max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-              :class="m.role === 'user' ? 'bg-primary text-inverted' : (m.error ? 'bg-error/10 text-error' : 'bg-elevated text-default')"
+              v-for="(m, i) in messages"
+              :key="i"
+              :class="m.role === 'user' ? 'flex justify-end' : ''"
             >
-              <!-- eslint-disable-next-line vue/no-v-html -->
-              <div v-html="render(m.content)" />
               <div
-                v-if="m.sources?.length"
-                class="flex flex-wrap gap-1.5 pt-2"
+                class="max-w-[92%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
+                :class="m.role === 'user' ? 'bg-primary text-inverted' : (m.error ? 'bg-error/10 text-error' : 'bg-elevated text-default')"
               >
-                <a
-                  v-for="s in m.sources"
-                  :key="s.url"
-                  :href="s.url"
-                  class="text-xs px-2 py-1 rounded-md border border-default text-muted hover:text-highlighted"
-                >{{ s.title }}</a>
+                <!-- eslint-disable-next-line vue/no-v-html -->
+                <div v-html="render(m.content)" />
+                <div
+                  v-if="m.sources?.length"
+                  class="flex flex-wrap gap-1.5 pt-2"
+                >
+                  <a
+                    v-for="s in m.sources"
+                    :key="s.url"
+                    :href="s.url"
+                    class="text-xs px-2 py-1 rounded-md border border-default text-muted hover:text-highlighted"
+                  >{{ s.title }}</a>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div
-            v-if="loading"
-            class="flex items-center gap-2 text-sm text-muted"
-          >
-            <UIcon
-              name="i-lucide-loader-circle"
-              class="size-4 animate-spin"
-            />
-            Думаю...
+            <div
+              v-if="loading"
+              class="flex items-center gap-2 text-sm text-muted"
+            >
+              <UIcon
+                name="i-lucide-loader-circle"
+                class="size-4 animate-spin"
+              />
+              Думаю...
+            </div>
           </div>
-        </div>
+        </section>
+      </Transition>
 
-        <form
-          class="flex items-end gap-2 p-3 border-t border-default"
-          @submit.prevent="ask(input)"
+      <Transition name="ai">
+        <div
+          v-if="open && !messages.length"
+          class="flex flex-wrap justify-center gap-2"
         >
-          <textarea
-            ref="inputEl"
-            v-model="input"
-            rows="1"
-            maxlength="1000"
-            placeholder="Задай вопрос"
-            aria-label="Вопрос"
-            class="flex-1 resize-none rounded-lg border border-default bg-transparent px-3 py-2 text-base outline-none focus:border-primary max-h-28"
-            @keydown.enter.exact.prevent="ask(input)"
-          />
           <UButton
-            type="submit"
-            icon="i-lucide-send"
-            :disabled="!input.trim() || loading"
-            aria-label="Отправить"
-          />
-        </form>
-        <p class="px-4 pb-2 text-xs text-muted text-center">
-          ИИ может ошибаться. Не пиши личные данные
-        </p>
-      </section>
-    </Transition>
+            v-for="e in examples"
+            :key="e"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            class="bg-default"
+            @click="ask(e)"
+          >
+            {{ e }}
+          </UButton>
+        </div>
+      </Transition>
+
+      <form
+        class="flex items-center gap-2 rounded-2xl border border-default bg-default/95 backdrop-blur shadow-lg pl-3 pr-2 py-2 focus-within:border-primary transition-colors"
+        @submit.prevent="ask(input)"
+      >
+        <UIcon
+          name="i-lucide-sparkles"
+          class="size-4 text-primary shrink-0"
+        />
+        <input
+          ref="inputEl"
+          v-model="input"
+          type="text"
+          maxlength="1000"
+          placeholder="Спросить ИИ-помощника..."
+          aria-label="Вопрос"
+          autocomplete="off"
+          class="flex-1 min-w-0 bg-transparent text-base outline-none placeholder:text-muted"
+          @focus="open = true"
+        >
+        <span class="hidden sm:flex items-center gap-1 text-xs text-muted shrink-0">
+          <UKbd value="ctrl" />
+          <UKbd value="I" />
+        </span>
+        <UButton
+          type="submit"
+          icon="i-lucide-arrow-up"
+          size="sm"
+          :disabled="!input.trim() || loading"
+          aria-label="Отправить"
+        />
+      </form>
+    </div>
   </ClientOnly>
 </template>
 
 <style scoped>
 .ai-enter-active { transition: opacity .2s ease, transform .22s cubic-bezier(.23, 1, .32, 1); }
 .ai-leave-active { transition: opacity .14s ease; }
-.ai-enter-from { opacity: 0; transform: translateY(10px) scale(.98); }
+.ai-enter-from { opacity: 0; transform: translateY(8px); }
 .ai-leave-to { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {

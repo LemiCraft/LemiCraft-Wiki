@@ -25,6 +25,16 @@ useSeoMeta({
 })
 
 provide('navigation', navigation)
+
+const route = useRoute()
+const showAssistant = ref(false)
+onMounted(() => {
+  try {
+    if (route.query.ai === '1') localStorage.setItem('wiki-ai-enabled', '1')
+    if (route.query.ai === '0') localStorage.removeItem('wiki-ai-enabled')
+    showAssistant.value = localStorage.getItem('wiki-ai-enabled') === '1'
+  } catch {}
+})
 </script>
 
 <template>
@@ -41,7 +51,7 @@ provide('navigation', navigation)
 
     <AppFooter />
 
-    <AssistantWidget />
+    <AssistantWidget v-if="showAssistant" />
 
     <ClientOnly>
       <LazyUContentSearch

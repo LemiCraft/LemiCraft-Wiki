@@ -7,12 +7,15 @@ export default defineNuxtConfig({
     '@nuxt/content',
     'nuxt-og-image',
     'nuxt-llms',
-    '@nuxtjs/mcp-toolkit',
     '@nuxtjs/sitemap'
   ],
 
   llms: {
     domain: 'https://wiki.lemicraft.ru'
+  },
+
+  fonts: {
+    families: [{ name: 'Onest', provider: 'google', weights: [400, 700], subsets: ['cyrillic', 'latin'], global: true }]
   },
 
   site: {

@@ -214,7 +214,7 @@ onBeforeUnmount(() => {
           placeholder="Спросить ИИ..."
           aria-label="Вопрос"
           autocomplete="off"
-          class="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted"
+          class="flex-1 min-w-0 bg-transparent text-base sm:text-sm outline-none placeholder:text-muted"
           @focus="open = true"
         >
         <span class="hidden sm:flex items-center gap-1 text-xs text-muted shrink-0">

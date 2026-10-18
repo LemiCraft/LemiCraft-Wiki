@@ -57,7 +57,9 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg?v=2' },
+        { rel: 'icon', href: '/favicon.ico?v=2', sizes: 'any' },
+        { rel: 'apple-touch-icon', href: '/favicons/apple-touch-icon.png?v=2' },
         { rel: 'canonical', href: 'https://wiki.lemicraft.ru/' }
       ]
     }

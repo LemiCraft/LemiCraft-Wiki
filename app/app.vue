@@ -11,7 +11,9 @@ useHead({
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg?v=2' },
+    { rel: 'icon', href: '/favicon.ico?v=2', sizes: 'any' },
+    { rel: 'apple-touch-icon', href: '/favicons/apple-touch-icon.png?v=2' }
   ],
   htmlAttrs: {
     lang: 'ru'

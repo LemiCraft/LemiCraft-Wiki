@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
-const mounted = useMounted()
+const mounted = ref(false)
+onMounted(() => { mounted.value = true })
 const isDark = computed(() => colorMode.value === 'dark')
 
 function toggle() {

@@ -22,6 +22,7 @@ function toggle() {
   <UButton
     color="neutral"
     variant="ghost"
+    square
     :aria-label="isDark ? 'Светлая тема' : 'Тёмная тема'"
     class="icon-press"
     @click="toggle"

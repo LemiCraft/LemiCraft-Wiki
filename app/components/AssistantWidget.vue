@@ -28,12 +28,45 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 function esc(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
+const ARROW = '<svg class="ai-chip-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>'
+
+// ссылка на вики показывается названием страницы, на остальные сайты - доменом
+function chip(rawUrl: string, label?: string) {
+  let u: URL
+  try {
+    u = new URL(rawUrl.replace(/&amp;/g, '&'))
+  } catch {
+    return esc(rawUrl)
+  }
+  const host = u.hostname.replace(/^www\./, '')
+  const own = host === 'wiki.lemicraft.ru'
+  const text = label || (own ? decodeURIComponent(u.pathname).replace(/^\/|\/$/g, '') || 'Главная вики' : host)
+  const icon = own ? '/favicon.svg?v=2' : `${u.origin}/favicon.ico`
+  const attrs = own ? `href="${esc(u.pathname)}"` : `href="${esc(u.href)}" target="_blank" rel="noopener noreferrer"`
+  return `<a ${attrs} class="ai-chip" title="${esc(u.href)}"><img src="${esc(icon)}" alt="" width="14" height="14" referrerpolicy="no-referrer" onerror="this.remove()"><span>${esc(text)}</span>${own ? '' : ARROW}</a>`
+}
+
 function render(text: string) {
-  return esc(text)
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline">$1</a>')
-    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-    .replace(/`([^`]+)`/g, '<code class="px-1 rounded bg-elevated">$1</code>')
-    .replace(/\n/g, '<br>')
+  const stash: string[] = []
+  const keep = (html: string) => `\uE000${stash.push(html) - 1}\uE001`
+  let r = esc(text)
+  r = r.replace(/`([^`\n]+)`/g, '<code class="ai-code">$1</code>')
+  r = r.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+  r = r.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, (_m, label, url) => keep(chip(url, label)))
+  r = r.replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;:!?])/g, (_m, pre, url) => pre + keep(chip(url)))
+  r = r.replace(/^\s*[-*]\s+/gm, '• ').replace(/\n/g, '<br>')
+  return r.replace(/\uE000(\d+)\uE001/g, (_m, n) => stash[Number(n)] ?? '')
+}
+
+// источники, чьи ссылки уже есть в ответе, не повторяем
+function extraSources(m: Msg) {
+  const seen = new Set<string>()
+  return (m.sources || []).filter((src) => {
+    const key = src.url.replace(/\/$/, '')
+    if (seen.has(key) || m.content.includes(src.url)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 function atBottom() {
@@ -111,6 +144,14 @@ async function ask(q: string) {
   }
 }
 
+// ссылки на страницы вики открываются без перезагрузки
+function onLinkClick(e: MouseEvent) {
+  const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/"]')
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || a.target) return
+  e.preventDefault()
+  navigateTo(a.getAttribute('href')!)
+}
+
 function focusInput() {
   inputEl.value?.focus()
 }
@@ -147,7 +188,7 @@ onBeforeUnmount(() => {
   <ClientOnly>
     <div
       ref="bar"
-      class="fixed z-40 bottom-3 left-1/2 -translate-x-1/2 w-[min(24rem,calc(100vw-1.5rem))] flex flex-col gap-2"
+      class="ai-bar fixed z-40 bottom-3 left-1/2 -translate-x-1/2 w-[min(24rem,calc(100vw-1.5rem))] flex flex-col gap-2"
     >
       <Transition name="ai">
         <section
@@ -189,29 +230,63 @@ onBeforeUnmount(() => {
             class="overflow-y-auto px-4 py-3 flex flex-col gap-3"
             role="log"
             aria-live="polite"
+            @click="onLinkClick"
           >
             <div
               v-for="m in messages"
               :key="m.id"
-              :class="m.role === 'user' ? 'flex justify-end' : ''"
+              class="flex gap-2.5"
+              :class="m.role === 'user' ? 'justify-end' : 'items-start'"
             >
-              <div
-                class="max-w-[92%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-                :class="m.role === 'user' ? 'bg-primary text-inverted' : (m.error ? 'bg-error/10 text-error' : 'bg-elevated text-default')"
+              <span
+                v-if="m.role === 'assistant'"
+                class="grid place-items-center size-7 mt-0.5 shrink-0 rounded-lg bg-primary/15 text-primary"
+                aria-hidden="true"
               >
-                <!-- eslint-disable-next-line vue/no-v-html -->
-                <div v-html="render(visibleText(m))" />
+                <UIcon
+                  name="i-lucide-bot"
+                  class="size-4"
+                />
+              </span>
+              <div
+                v-if="m.role === 'user'"
+                class="ai-user max-w-[85%] px-3.5 py-2.5 text-sm leading-relaxed bg-primary text-inverted whitespace-pre-wrap break-words"
+              >
+                {{ m.content }}
+              </div>
+              <div
+                v-else
+                class="flex flex-col gap-2 min-w-0 max-w-full"
+              >
                 <div
-                  v-if="m.sources?.length && !m.typing"
-                  class="flex flex-wrap gap-1.5 pt-2"
+                  class="ai-bot px-3.5 py-2.5 text-sm leading-relaxed break-words"
+                  :class="m.error ? 'bg-error/10 text-error' : 'bg-elevated text-default'"
                 >
-                  <a
-                    v-for="s in m.sources"
-                    :key="s.url"
-                    :href="s.url"
-                    class="text-xs px-2 py-1 rounded-md border border-default text-muted hover:text-highlighted"
-                  >{{ s.title }}</a>
+                  <!-- eslint-disable-next-line vue/no-v-html -->
+                  <span v-html="render(visibleText(m))" /><span
+                    v-if="m.typing"
+                    class="ai-caret"
+                    aria-hidden="true"
+                  />
                 </div>
+                <Transition name="ai-meta">
+                  <div
+                    v-if="!m.typing && extraSources(m).length"
+                    class="flex flex-wrap gap-1.5"
+                  >
+                    <a
+                      v-for="src in extraSources(m)"
+                      :key="src.url"
+                      :href="src.url"
+                      class="ai-src"
+                    >
+                      <UIcon
+                        name="i-lucide-book-open"
+                        class="size-3.5 shrink-0"
+                      />{{ src.title }}
+                    </a>
+                  </div>
+                </Transition>
               </div>
             </div>
 
@@ -285,6 +360,27 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.ai-user { border-radius: 16px 16px 4px 16px; }
+.ai-bot { border-radius: 4px 16px 16px 16px; text-wrap: pretty; }
+.ai-bot :deep(strong) { font-weight: 700; color: var(--ui-text-highlighted); }
+.ai-bot :deep(.ai-code) { padding: 1px 6px; border-radius: 6px; background: rgb(0 0 0 / .25); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.ai-bot :deep(.ai-chip) { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; margin: 1px 2px; padding: 2px 9px 2px 6px; min-height: 26px; max-width: 100%; border-radius: 8px; border: 1px solid var(--ui-border-accented); background: var(--ui-bg); color: var(--ui-text); font-size: 13px; font-weight: 600; line-height: 1.4; text-decoration: none; white-space: nowrap; transition: border-color .2s ease, color .2s ease; }
+.ai-bot :deep(.ai-chip span) { overflow: hidden; text-overflow: ellipsis; }
+.ai-bot :deep(.ai-chip img) { width: 14px; height: 14px; border-radius: 4px; object-fit: contain; flex: 0 0 auto; }
+.ai-bot :deep(.ai-chip-arrow) { flex: 0 0 auto; opacity: .7; }
+.ai-bot :deep(.ai-chip:hover) { border-color: var(--ui-primary); color: var(--ui-primary); }
+.ai-bot :deep(.ai-chip:focus-visible) { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.ai-caret { display: inline-block; width: 7px; height: 14px; margin-left: 2px; vertical-align: -2px; border-radius: 2px; background: var(--ui-primary); animation: ai-blink .9s steps(2) infinite; }
+.ai-src { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: 12px; font-weight: 600; text-decoration: none; transition: border-color .2s ease, color .2s ease; }
+.ai-src:hover { border-color: var(--ui-border-accented); color: var(--ui-text-highlighted); }
+.ai-src:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.ai-meta-enter-active { transition: opacity .3s ease .05s; }
+.ai-meta-enter-from { opacity: 0; }
+@keyframes ai-blink { 50% { opacity: 0; } }
+
+.ai-bar { animation: ai-bar-in .5s cubic-bezier(.23, 1, .32, 1) .15s backwards; }
+@keyframes ai-bar-in { from { opacity: 0; translate: 0 12px; } }
+
 .ai-enter-active { transition: opacity .2s ease, transform .22s cubic-bezier(.23, 1, .32, 1); }
 .ai-leave-active { transition: opacity .14s ease; }
 .ai-enter-from { opacity: 0; transform: translateY(8px); }
@@ -305,5 +401,8 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .ai-enter-active, .ai-leave-active, .ai-msg-enter-active, .ai-msg-leave-active, .ai-msg-move { transition: none; }
   .ai-think i { animation: none; opacity: .7; }
+  .ai-bar { animation: none; }
+  .ai-caret { animation: none; }
+  .ai-meta-enter-active { transition: none; }
 }
 </style>

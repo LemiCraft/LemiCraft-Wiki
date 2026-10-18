@@ -84,6 +84,7 @@ onBeforeUnmount(() => {
       <UButton
         color="neutral"
         variant="ghost"
+        square
         :aria-label="menuOpen ? 'Закрыть меню' : 'Открыть меню'"
         :aria-expanded="menuOpen"
         class="icon-press lg:hidden"

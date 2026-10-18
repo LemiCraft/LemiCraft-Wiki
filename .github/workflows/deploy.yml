@@ -23,6 +23,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          # в package.json вики указан packageManager: pnpm - без этой строки setup-node пытается включить кэш pnpm
+          # до его установки и падает. pnpm ставится следующим шагом
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@10

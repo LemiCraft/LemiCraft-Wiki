@@ -29,6 +29,7 @@ export default defineAppConfig({
       {
         icon: 'i-lucide-home',
         to: 'https://lemicraft.ru',
+        target: '_blank',
         'aria-label': 'Главная страница'
       },
       {
@@ -70,7 +71,15 @@ export default defineAppConfig({
     ]
   },
   toc: {
-    title: 'На этой странице'
+    title: 'На этой странице',
+    bottom: {
+      title: 'Помощь',
+      links: [
+        { icon: 'i-simple-icons-discord', label: 'Discord-сервер', to: 'https://discord.gg/hUjXjc9bQc', target: '_blank' },
+        { icon: 'i-lucide-ticket', label: 'Написать в тикет', to: 'https://lemicraft.ru/tickets', target: '_blank' },
+        { icon: 'i-lucide-puzzle', label: 'Сборщик модов', to: 'https://lemicraft.ru/mods', target: '_blank' }
+      ]
+    }
   },
   search: {
     placeholder: 'Поиск по документации...',

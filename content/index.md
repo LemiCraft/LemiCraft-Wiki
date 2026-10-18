@@ -30,6 +30,7 @@ seo:
   color: neutral
   size: xl
   to: https://lemicraft.ru
+  target: _blank
   variant: outline
   ---
   Главная страница
@@ -40,6 +41,7 @@ seo:
   color: neutral
   size: xl
   to: https://discord.gg/hUjXjc9bQc
+  target: _blank
   variant: outline
   icon: i-simple-icons-discord
   ---

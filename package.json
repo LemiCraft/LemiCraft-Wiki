@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/page-dates.mjs",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import pageDates from '~/data/page-dates.json'
 import type { ContentNavigationItem } from '@nuxt/content'
 import { findPageHeadline } from '@nuxt/content/utils'
 
@@ -41,6 +42,11 @@ useHead({
       href: `https://wiki.lemicraft.ru${route.path}`
     }
   ]
+})
+
+const updated = computed(() => {
+  const iso = (pageDates as Record<string, string>)[page.value?.stem || '']
+  return iso ? new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
 })
 
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
@@ -106,6 +112,12 @@ const breadcrumbs = computed(() => {
     </UPageHeader>
 
     <UPageBody>
+      <p
+        v-if="updated"
+        class="-mt-4 mb-6 text-sm text-muted"
+      >
+        Обновлено {{ updated }}
+      </p>
       <ContentRenderer
         v-if="page"
         :value="page"

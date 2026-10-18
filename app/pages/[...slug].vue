@@ -47,7 +47,7 @@ useHead({
 
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
 
-defineOgImageComponent('Docs', {
+defineOgImage('Docs', {
   headline: headline.value
 })
 

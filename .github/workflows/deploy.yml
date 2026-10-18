@@ -4,51 +4,131 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+# два выката подряд не должны писать в одну папку одновременно: новый ждёт старый
+concurrency:
+  group: wiki-deploy
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Скачиваем код
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
-      # 2. Устанавливаем Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
-      # 3. Устанавливаем pnpm
       - name: Install pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@10
 
-      # 4. Ставим зависимости
+      # по lock-файлу, без пересчёта версий: то, что собрали локально, то и выкатываем
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      # 5. Строим сайт
       - name: Build Nuxt
         run: pnpm build
 
-      # 6. Очистка от старой версии
-      - name: Clean remote .output folder
+      # Вики статическая: nginx отдаёт /var/www/lemi/lemi-wiki/.output/public. Поэтому везим только public
+      # в соседнюю папку и подменяем её одним переименованием - посетители не видят ни пустой, ни недокопированной вики
+      - name: Prepare staging folder
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
-          script: rm -rf "${{ secrets.DEPLOY_PATH }}/.output/*"
+          script: rm -rf "${{ secrets.DEPLOY_PATH }}/.output.new" && mkdir -p "${{ secrets.DEPLOY_PATH }}/.output.new"
 
-      # 7. Копируем .output на сервер
-      - name: Deploy .output to server
-        uses: appleboy/scp-action@v1
+      - name: Upload to server (attempt 1)
+        id: deploy1
+        continue-on-error: true
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
-          source: ".output/"
-          target: "${{ secrets.DEPLOY_PATH }}/"
+          source: ".output/public/"
+          target: "${{ secrets.DEPLOY_PATH }}/.output.new"
+          strip_components: 2
+          overwrite: true
+          timeout: 90s
+          command_timeout: 5m
+
+      - name: Wait before retry 1
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 10
+
+      - name: Upload to server (attempt 2)
+        id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        continue-on-error: true
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          source: ".output/public/"
+          target: "${{ secrets.DEPLOY_PATH }}/.output.new"
+          strip_components: 2
+          overwrite: true
+          timeout: 90s
+          command_timeout: 5m
+
+      - name: Wait before retry 2
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 10
+
+      - name: Upload to server (attempt 3)
+        id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          source: ".output/public/"
+          target: "${{ secrets.DEPLOY_PATH }}/.output.new"
+          strip_components: 2
+          overwrite: true
+          timeout: 90s
+          command_timeout: 5m
+
+      # подмена: старая папка уходит в .output.old, новая встаёт на её место, старая удаляется только после проверки.
+      # nginx смотрит в .output/public, поэтому внутри новой папки нужен подкаталог public
+      - name: Swap folders
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            test -f .output.new/index.html
+            mkdir -p .output.stage/public
+            rm -rf .output.stage/public
+            mv .output.new .output.stage/public
+            rm -rf .output.old
+            if [ -d .output ]; then mv .output .output.old; fi
+            mv .output.stage .output
+            rm -rf .output.old
+
+      # после подмены главная и 404 должны отвечать: если нет, выкат считается проваленным и это видно в Actions
+      - name: Check the live wiki
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://wiki.lemicraft.ru/ || true)
+            [ "$code" = "200" ] && echo "wiki answers 200" && exit 0
+            echo "attempt $i: got $code"; sleep 6
+          done
+          exit 1

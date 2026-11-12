@@ -224,8 +224,14 @@ function onKeydown(e) {
     e.preventDefault()
     step(...ARROWS[k])
   } else if (k === 'Tab') {
+    // на первом и последнем слове Tab отпускает фокус, иначе из сетки не выйти с клавиатуры
+    const cur = activeWordIndex.value ?? -1
+    if (e.shiftKey ? cur <= 0 : cur >= wordList.length - 1) return
     e.preventDefault()
     nextWord(e.shiftKey ? -1 : 1)
+  } else if (k === 'Escape') {
+    // выйти из сетки с клавиатуры
+    e.target?.blur?.()
   } else if (k === ' ' || k === 'Enter') {
     e.preventDefault()
     if (active.value) select(active.value.cell)

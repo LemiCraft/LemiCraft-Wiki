@@ -23,7 +23,9 @@
     </div>
 
     <div v-else class="download-loading">
-      Загрузка...
+      <a href="https://github.com/LemiCraft/LemiCraft-Launcher/releases/latest" target="_blank" rel="noopener noreferrer">
+        Скачать LemiCraft Launcher ↗
+      </a>
     </div>
 
     <div v-if="otherDownloads.length" class="other-downloads">
@@ -43,7 +45,7 @@
   // Статическая сборка запекла бы версию на момент билда, поэтому тянем её только в браузере
   const { data, error } = await useAsyncData('lemi-launcher', () =>
     $fetch('https://lemicraft.ru/api/launcher/version'),
-    { server: false }
+    { server: false, getCachedData: () => undefined }
   )
 
   const downloadUrl = computed(() => data.value?.downloadUrl ?? null)

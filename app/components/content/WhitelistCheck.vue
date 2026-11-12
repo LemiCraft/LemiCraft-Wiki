@@ -5,12 +5,15 @@
         <UInput
           v-model="nick"
           placeholder="Ваш никнейм"
+          aria-label="Никнейм в Minecraft"
           size="lg"
           class="check-input"
           @keyup.enter="check"
         />
         <UButton size="lg" :loading="loading" @click="check">Проверить</UButton>
       </div>
+
+      <p class="sr-only" role="status" aria-live="polite">{{ announce }}</p>
 
       <Transition name="fade">
         <div v-if="result" :key="result.nick" class="result" :class="result.found ? 'result-ok' : 'result-fail'">
@@ -33,13 +36,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const API_BASE = 'https://lemicraft.ru'
 
 const nick = ref('')
 const loading = ref(false)
 const result = ref(null)
+const announce = computed(() => !result.value ? '' : result.value.found ? `${result.value.nick} есть в whitelist` : `${result.value.nick} не найден в whitelist`)
 
 async function check() {
   const q = nick.value.trim()

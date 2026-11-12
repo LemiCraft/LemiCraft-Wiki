@@ -40,8 +40,10 @@
 </template>
 
 <script setup>
+  // Статическая сборка запекла бы версию на момент билда, поэтому тянем её только в браузере
   const { data, error } = await useAsyncData('lemi-launcher', () =>
-    $fetch('https://lemicraft.ru/api/launcher/version')
+    $fetch('https://lemicraft.ru/api/launcher/version'),
+    { server: false }
   )
 
   const downloadUrl = computed(() => data.value?.downloadUrl ?? null)

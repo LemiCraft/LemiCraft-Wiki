@@ -238,7 +238,7 @@ LemiCraft — это Minecraft-сервер на ядре [Purpur](https://purpu
 - Попросите помощи в чате
 
 **Email**:
-- Пишите по адресу `lemicraftteam@yandex.ru`
+- Пишите по адресу `support@lemicraft.ru`
 :::
 :::accordion-item{label="Не нашли ответ на вопрос?" icon="i-lucide-circle-help"}
 Если вашего вопроса нет в FAQ:

@@ -52,7 +52,7 @@ export default defineAppConfig({
       },
       {
         icon: 'i-lucide-mail',
-        to: 'mailto:lemicraftteam@yandex.ru',
+        to: 'mailto:support@lemicraft.ru',
         target: '_blank',
         'aria-label': 'Поддержка'
       },
